@@ -8,4 +8,4 @@
  *
  * Main module of the application.
  */
-var apigeePersistenceApiApp = angular.module('apigeePersistenceApiApp', []);
+angular.module('apigeePersistenceApiApp', []);
