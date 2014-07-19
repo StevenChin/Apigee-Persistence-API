@@ -3,4 +3,5 @@ npm-debug.log
 bower_components
 .tmp
 .sass-cache
+.npm-debug.log
 .editorconfig
