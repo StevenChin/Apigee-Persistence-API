@@ -1,7 +1,6 @@
 node_modules
-dist
+npm-debug.log
+bower_components
 .tmp
 .sass-cache
-bower_components
-.npm-debug.log
 .editorconfig

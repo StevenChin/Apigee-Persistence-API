@@ -18,12 +18,17 @@ module.exports = function (grunt) {
   // Configurable paths for the application
   var appConfig = {
     app: require('./bower.json').appPath || 'app',
-    dist: 'dist'
+    appName: 'apigee-persistence-api',
+    dist: 'dist',
+    files: {
+      services: ['app/scripts/services/collectionRepository.js', 'app/scripts/services/dataClientUtil.js', 'app/scripts/services/dataValidationUtil.js'],
+      constants: ['requestOptions.js']
+    }
   };
 
   // Define the configuration for all the tasks
   grunt.initConfig({
-
+    pkg: grunt.file.readJSON('package.json'),
     // Project settings
     yeoman: appConfig,
 
@@ -224,18 +229,29 @@ module.exports = function (grunt) {
     //     }
     //   }
     // },
-    // uglify: {
-    //   dist: {
-    //     files: {
-    //       '<%= yeoman.dist %>/scripts/scripts.js': [
-    //         '<%= yeoman.dist %>/scripts/scripts.js'
-    //       ]
-    //     }
-    //   }
-    // },
-    // concat: {
-    //   dist: {}
-    // },
+    uglify: {
+      dist: {
+        files: {
+          '<%= yeoman.dist %>/<%= yeoman.appName %>.min.js': [
+            '<%= yeoman.dist %>/<%= yeoman.appName %>.js'
+          ]
+        }
+      }
+    },
+    concat: {
+      dist: {
+        options: {
+          // Replace all 'use strict' statements in the code with a single one at the top
+          banner: '\'use strict\';\n',
+          process: function(src, filepath) {
+            return '// Source: ' + filepath + '\n' +
+              src.replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+          },
+        },
+        src: ['<%= yeoman.files.services %>', '<%= yeoman.files.constants %>'],
+        dest: 'dist/<%= yeoman.appName %>.js',
+      },
+    },
 
     imagemin: {
       dist: {
@@ -273,20 +289,6 @@ module.exports = function (grunt) {
           cwd: '<%= yeoman.dist %>',
           src: ['*.html', 'views/{,*/}*.html'],
           dest: '<%= yeoman.dist %>'
-        }]
-      }
-    },
-
-    // ngmin tries to make the code safe for minification automatically by
-    // using the Angular long form for dependency injection. It doesn't work on
-    // things like resolve or inject so those have to be done manually.
-    ngmin: {
-      dist: {
-        files: [{
-          expand: true,
-          cwd: '.tmp/concat/scripts',
-          src: '*.js',
-          dest: '.tmp/concat/scripts'
         }]
       }
     },
@@ -334,9 +336,6 @@ module.exports = function (grunt) {
       server: [
         'copy:styles'
       ],
-      test: [
-        'copy:styles'
-      ],
       dist: [
         'copy:styles',
         'imagemin',
@@ -350,6 +349,38 @@ module.exports = function (grunt) {
         configFile: 'test/karma.conf.js',
         singleRun: true
       }
+    },
+
+    bower: {
+      install: {
+        options: {
+          cleanTargetDir: true,
+          targetDir: 'bower_components'
+        }
+      }
+    },
+
+    bump: {
+      options: {
+        files: ['package.json', 'bower.json'],
+        updateConfigs: [],
+        commit: true,
+        commitMessage: 'Release v%VERSION%',
+        commitFiles: ['package.json', 'CHANGELOG.md', 'bower.json', 'dist/<%= yeoman.appName %>.js', 'dist/<%= yeoman.appName %>.min.js'],
+        createTag: true,
+        tagName: 'v%VERSION%',
+        tagMessage: 'Version %VERSION%',
+        push: true,
+        pushTo: '<%= pkg.repository.url %>',
+        gitDescribeOptions: '--tags --always --abbrev=1 --dirty=-d',
+        globalReplace: false
+      }
+    },
+
+    changelog: {
+      options: {
+        // Task-specific options go here.
+      }
     }
   });
 
@@ -361,6 +392,7 @@ module.exports = function (grunt) {
 
     grunt.task.run([
       'clean:server',
+      'bower:install',
       'wiredep',
       'concurrent:server',
       'autoprefixer',
@@ -376,20 +408,19 @@ module.exports = function (grunt) {
 
   grunt.registerTask('test', [
     'clean:server',
-    'concurrent:test',
-    'autoprefixer',
+    'bower:install',
     'connect:test',
     'karma'
   ]);
 
-  grunt.registerTask('build', [
+  grunt.registerTask('buildApp', [
     'clean:dist',
+    'bower:install',
     'wiredep',
     'useminPrepare',
     'concurrent:dist',
     'autoprefixer',
     'concat',
-    'ngmin',
     'copy:dist',
     'cdnify',
     'cssmin',
@@ -399,9 +430,18 @@ module.exports = function (grunt) {
     'htmlmin'
   ]);
 
+  grunt.registerTask('build', [
+    'clean:dist',
+    'bower:install',
+    'concat',
+    'uglify',
+    'changelog',
+    'bump:prerelease'
+  ]);
+
   grunt.registerTask('default', [
     'newer:jshint',
     'test',
-    'build'
+    'buildApp'
   ]);
 };
