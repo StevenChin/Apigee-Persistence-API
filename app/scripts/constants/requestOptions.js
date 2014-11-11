@@ -7,11 +7,11 @@
  */
 angular.module('apigeePersistenceApiApp').constant('RequestOptions', {
   getCollection: {
-                   'client':{},
-                   'type':'',
-                   'qs': {
-                           'ql': '',
-                           'limit':10
-                         }
-                  }
+   'client':{},
+   'type':'',
+   'qs': {
+     'ql': '',
+     'limit':10
+    }
+  }
 });
