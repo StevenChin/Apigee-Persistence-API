@@ -22,7 +22,7 @@ module.exports = function (grunt) {
     dist: 'dist',
     files: {
       services: ['app/scripts/services/collectionRepository.js', 'app/scripts/services/dataClientUtil.js', 'app/scripts/services/dataValidationUtil.js'],
-      constants: ['requestOptions.js']
+      constants: ['app/scripts/constants/requestOptions.js']
     }
   };
 
