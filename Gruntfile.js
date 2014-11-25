@@ -21,7 +21,8 @@ module.exports = function (grunt) {
     appName: 'apigee-persistence-api',
     dist: 'dist',
     files: {
-      services: ['app/scripts/services/collectionRepository.js', 'app/scripts/services/dataClientUtil.js', 'app/scripts/services/dataValidationUtil.js'],
+      services: ['app/scripts/services/collectionRepository.js', 'app/scripts/services/dataClientUtil.js', 'app/scripts/services/dataValidationUtil.js',
+                 'app/scripts/services/collectionErrorLogger.js'],
       constants: ['app/scripts/constants/requestOptions.js']
     }
   };
