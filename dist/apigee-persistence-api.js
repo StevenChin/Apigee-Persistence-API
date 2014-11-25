@@ -7,8 +7,8 @@
  *    Additionally, functionality is provided to perform custom queries.
  * # CollectionRepository
  */
- angular.module('apigeePersistenceApiApp').service('CollectionRepository',['DataClientUtil', 'DataValidationUtil', '$log', 'RequestOptions',
-   function(DataClientUtil, DataValidationUtil, $log, RequestOptions){
+ angular.module('apigeePersistenceApiApp').service('CollectionRepository',['DataClientUtil', 'DataValidationUtil', '$log', 'RequestOptions', 'CollectionErrorLogger',
+   function(DataClientUtil, DataValidationUtil, $log, RequestOptions, CollectionErrorLogger){
      /*
       * @ngdoc function
       * @name CollectionRepository:initCollection
@@ -39,9 +39,7 @@
          collection = new Apigee.Collection(options);
        }
        else{
-         $log.error('Initialization of collection could not be performed. At least one of the following occurred:\n' +
-                    '- dataClient was invalid\n' +
-                    '- type was invalid\n');
+         CollectionErrorLogger.initializationFailure();
        }
        return collection;
      };
@@ -61,14 +59,14 @@
 
      /**
       * @ngdoc function
-      * @name CollectionRepository:updateCollection
+      * @name CollectionRepository:updateCollectionEntities
       * # updateCollection
       * @description Function used to append retrieved collection entities to the entities property of the service.
       * @param {object} erorr - error object with details of error that occured when trying to retrieve
       *      the collection.
       * @param {object} data - object containing entities retrived from a collection.
       */
-     var updateCollection = function(error, data){
+     var updateCollectionEntities = function(error, data){
        if(error){
          $log.error(error);
        }
@@ -77,22 +75,9 @@
           this.entities.push.apply(this.entities, data.entities);
          }
          else{
-           logInvalidDataEntitiesError();
+           CollectionErrorLogger.invalidDataEntities();
          }
        }
-     };
-
-     /**
-      * @ngdoc function
-      * @name CollectionRepository:logInvalidDataEntitiesError
-      * # logInvalidDataEntitiesError
-      * @description Function used to log an error when the entities property of a retrieved collection is invalid.
-      */
-     var logInvalidDataEntitiesError = function(){
-       $log.error('Data Entities for collection is invalid. One of the following occurred:\n' +
-                '- data entities is undefined\n' +
-                '- data entities is null\n' +
-                '- data entities is not an array\n');
      };
 
      /*
@@ -101,33 +86,32 @@
       * # getAll
       * @description Function used to retrieve all of the entities for a given collection
       * @param {Apigee.Collection} collection - apigee collection
-      * @return {object|null} - the entities retrieved from the call to fetch the collection when successful,
-      *     null when failed.
+      * @param @param {function} [callback] - function to be called to process the result of the collection retrieval
       */
-     var getAll = function(collection){
+     var getAll = function(collection, callback){
         if(DataValidationUtil.isValidCollection(collection)){
           this.clearEntities();
           collection.fetch(function(error, data){
             if(error){
-              $log.error(error);
+              callback(error, null);
             }
             else{
               if(DataValidationUtil.isValidDataEntities(data)){
                 this.entities = data.entities;
                 while(collection.hasNextPage()){
-                  collection.getNextPage(updateCollection);
+                  collection.getNextPage(updateCollectionEntities);
                 }
+                callback(null, this.entities);
               }
               else{
-                logInvalidDataEntitiesError();
+                callback(CollectionErrorLogger.invalidDataEntitiesMsg, null);
               }
             }
         });
         }
         else{
-          $log.error('Entities from the collection could not be retrieved, collection was invalid');
+          callback(CollectionErrorLogger.invalidCollectionMsg, null);
         }
-        return entities;
      };
 
      return{
@@ -368,3 +352,84 @@ angular.module('apigeePersistenceApiApp').service('DataValidationUtil', [
         isValidDataEntities: isValidDataEntities
     };
 }]);
+
+// Source: app/scripts/services/collectionErrorLogger.js
+/*
+* @ngdoc service
+* @name apigeePersistenceApiApp.service:CollectionErrors
+* @description Service used for logging apigee collection related errors.
+* # CollectionErrors
+*/
+angular.module('apigeePersistenceApiApp').service('CollectionErrorLogger', ['$log',
+  function($log){
+
+    var invalidDataEntitiesMsg = 'Data Entities for collection is invalid. One of the following occurred:\n' +
+                                 '- data entities is undefined\n' +
+                                 '- data entities is null\n' +
+                                 '- data entities is not an array\n';
+
+    var invalidCollectionMsg = 'Entities from the collection could not be retrieved, collection was invalid';
+
+    var initializationFailureMsg = 'Initialization of collection could not be performed. At least one of the following occurred:\n' +
+                                   '- dataClient was invalid\n' +
+                                   '- type was invalid\n';
+    /**
+    * @ngdoc function
+    * @name CollectionRepository:invalidDataEntities
+    * # invalidDataEntities
+    * @description Function used to log an error when the entities property of a retrieved collection is invalid.
+    */
+    var invalidDataEntities = function(){
+      $log.error(invalidDataEntitiesMsg);
+    };
+
+    /**
+    * @ngdoc function
+    * @name CollectionRepository:invalidCollection
+    * # invalidCollection
+    * @description Function used to log an error when a collection is invalid.
+    */
+    var invalidCollection = function(){
+      $log.error(invalidCollectionMsg);
+    };
+
+    /**
+    * @ngdoc function
+    * @name CollectionRepository:initializationFailure
+    * # initializationFailure
+    * @description Function used to log an error when a collection failed to intialize.
+    */
+    var initializationFailure = function(){
+      $log.error(initializationFailureMsg);
+    };
+
+    return{
+      invalidDataEntities: invalidDataEntities,
+      invalidDataEntitiesMsg: invalidDataEntitiesMsg,
+      invalidCollection: invalidCollection,
+      invalidCollectionMsg: invalidCollectionMsg,
+      initializationFailure: initializationFailure,
+      initializationFailureMsg: initializationFailureMsg
+    };
+}]);
+
+// Source: app/scripts/constants/requestOptions.js
+/**
+ * @ngdoc function
+ * @name apigeePersistenceApiApp.constant:RequestOptions
+ * @description The set of constants used for configuring the options
+ *      for Apigee collections, entities and requests
+ * #RequestOptions
+ */
+angular.module('apigeePersistenceApiApp').constant('RequestOptions', (function (){
+  return{
+    getCollection: {
+      'client':{},
+      'type':'',
+      'qs': {
+        'ql': '',
+        'limit':10
+      }
+    }
+  };
+})());

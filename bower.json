@@ -1,6 +1,6 @@
 {
   "name": "apigee-persistence-api",
-  "version": "0.0.0",
+  "version": "0.0.1-0",
   "description": "AngularJS module for performing CRUD operations with Apigee",
   "main": ["dist/apigee-persistence-api.js"],
   "license": "LICENSE",
