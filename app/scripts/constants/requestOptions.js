@@ -1,3 +1,4 @@
+'use strict';
 /**
  * @ngdoc function
  * @name apigeePersistenceApiApp.constant:RequestOptions
@@ -5,13 +6,15 @@
  *      for Apigee collections, entities and requests
  * #RequestOptions
  */
-angular.module('apigeePersistenceApiApp').constant('RequestOptions', {
-  getCollection: {
-   'client':{},
-   'type':'',
-   'qs': {
-     'ql': '',
-     'limit':10
+angular.module('apigeePersistenceApiApp').constant('RequestOptions', (function (){
+  return{
+    getCollection: {
+      'client':{},
+      'type':'',
+      'qs': {
+        'ql': '',
+        'limit':10
+      }
     }
-  }
-});
+  };
+})());
